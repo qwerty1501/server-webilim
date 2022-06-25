@@ -1,0 +1,34 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}
+Content list {{ block.super }}
+  {% if object %}
+    Обновить контент "{{ object.title }}"
+  {% else %}
+    Добавить новый контент
+  {% endif %}
+{% endblock %}
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+   <a href="{% url "admin:index" %}">Домой</a> &rsaquo; 
+    <a href="{% url "admin:courses_course_changelist" %}">Курсы</a>
+     &rsaquo;
+    </div>
+{% endblock %}
+{% block content %}
+  <h1>
+    {% if object %}
+    Обновить контент "{{ object.title }}"
+    {% else %}
+    Добавить новый контент
+    {% endif %}
+  </h1>
+  <div class="module">
+    <h2>Данные курса</h2>
+    <form method="post" enctype="multipart/form-data">
+      {{ form.as_p }}
+      {% csrf_token %}
+      <p><input type="submit" value="Сохранить"></p>
+    </form>
+  </div>
+{% endblock %}

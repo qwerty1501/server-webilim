@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  postgres_db:
+    image: postgres:12
+    restart: always
+    container_name: postgres_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=webilime
+      - POSTGRES_USER=webilim_user
+      - POSTGRES_PASSWORD=webilim_pass
+
+  web:
+    build: .
+    restart: always
+    command: sh -c "python3 manage.py collectstatic --no-input && python3 manage.py makemigrations &&
+      python3 manage.py migrate &&
+      gunicorn -w 7 -b 0.0.0.0:8000 motionWeb.wsgi --reload"
+    volumes:
+        - ./:/app
+        - ./media:/app/media/
+        - ./static:/app/static/
+    ports:
+        - "8000:8000"
+    depends_on:
+        - postgres_db
+
+
+  nginx:
+      image: linuxserver/swag
+      restart: always
+      environment:
+          - PUID=1000
+          - PGID=1000
+          - TZ=Asia/Bishkek
+          - SUBDOMAINS=api
+          - VALIDATION=http
+          - ONLY_SUBDOMAINS=true
+          - STAGING=false
+      depends_on:
+          - web
+      ports:
+          - "80:80"
+          - "443:443"
+      volumes:
+          - ./nginx/nginx.conf:/config/nginx/site-confs/default
+          - ./media:/app/media
+          - lets:/config/keys/
+          - ./static:/app/static
+
+volumes:
+  postgres_data:
+  lets:

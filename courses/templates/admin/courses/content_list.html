@@ -1,0 +1,282 @@
+{% extends "admin/base_site.html" %}
+{% load custom_tags %}
+{% load static %}
+{% block title %}
+Module {{ module.order|add:1 }}: {{ module.title }}
+ Content list {{ block.super }}
+{% endblock %}
+
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+   <a href="{% url "admin:index" %}">Домой</a> &rsaquo; 
+    <a href="{% url "admin:courses_course_changelist" %}">Курсы</a>
+     &rsaquo;
+    <a href="{% url "admin:courses_course_change" module.course.id %}">{{ module.course.title }}</a>
+    &rsaquo; 
+    </div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .selected{
+        background-color: #e1dfdf;
+        list-style-type: disclosure-open;
+    }
+    .modules{ 
+    width: 100%;
+    /* padding: 10px; */
+    float: left;
+    background: #f8f8f8;
+    color: #fff;
+    font-family: 'Roboto', sans-serif;
+    border: 1px solid;
+    border-color: #c9c9ed;
+    }
+    ul > li {
+      list-style-type: disclosure-closed;
+      padding: 1px 0;
+  }
+    ul {
+      color:#164deb;
+    }
+    .edit_module, .module_button{
+      font-size: 14px;
+    }
+    .module_button{
+      display: flex;
+    }
+    .edit_module{
+      margin: 12px;
+    }
+    ul div p {
+      color: #141313;
+    }
+    .edit_button{
+      background: var(--button-bg);
+      padding: 10px 10px;
+      color: var(--button-fg) !important;
+      margin-left: 38px;
+      display: inline-flex;
+    }
+    .selected-link{
+      display: flex;
+      align-items: center;
+
+      padding-left: 16px;
+      padding-right: 16px;
+      height: 44px;
+    }
+    .contents.modules h2{
+      background-color: #79aec8;
+      padding: 10px;
+      margin: unset;
+    }
+    h3{
+      padding: 10px;
+      background: #79aec8;
+      margin: unset;
+      color: white;
+    }
+    .content-list{
+      padding: 10px;
+    }
+    .sub-content{
+      background: #79aec880;
+      color: #0088cb;
+    }
+    .content-type{
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+    .content-type p {
+      margin: unset;
+      padding-right: 72px;
+    }
+    .content-type .edit_button {
+      background: transparent;
+    }
+    .icon-pa{
+      position: absolute;
+      right: 0px;
+    }
+</style>
+
+{% with course=module.course %}
+    <h1>Курс "{{ course.title }}"</h1>
+    <div class="contents modules">
+      <h3>Модули</h3>
+      <div class="content-list">
+        <ul id="modules">
+          {% for m in course.modules.all %}
+            <li data-id="{{ m.id }}" {% if m == module %}
+             class="selected"{% endif %}>
+             <div class="selected-link">
+              <a class="module_button" href="{% url "content-list-module" course.id m.id%}">
+                <br>
+                  <span>
+                    Module <span class="order">{{ m.order|add:1 }}</span>
+                  </span>
+                  <br>
+                </a>
+              <a class="edit_module" href="{{ module|get_object_edit_link }}"><img title="Редактировать" src="/static/admin/img/icon-changelink.svg" alt="Изменить"></a>
+             </div>
+            </li>
+          {% empty %}
+            <li>No modules yet.</li>
+          {% endfor %}
+        </ul>
+          <a class="edit_button" href="{% url "admin:courses_course_change" module.course.id %}">Редактировать</a>
+      </div>
+    </div>
+    <div class="contents modules">
+        <h3>Уроки</h3>
+        <div class="content-list">
+          <ul id="lessons">
+            {% if module %}
+                {% for l in module.lessons.all %}
+                    <li data-id="{{ l.id }}" {% if l == lesson %}
+                    class="selected"{% endif %}>
+                    <div class="selected-link">
+                      <a href="{% url "content-list-lesson" course.id module.id l.id %}">
+                        <span>
+                        Lesson <span class="order">{{ l.order|add:1 }}</span>
+                        {{l.title}}
+                        </span>
+                        <br>
+                    </a>
+                    </div>
+                    </li>
+                {% empty %}
+                    <li>No lessons yet.</li>
+                {% endfor %}
+            {% else %}
+                Select modules for lessons
+            {% endif %}
+            </ul>
+            <p>
+              <a class="edit_button" href="{{ module|get_object_edit_link }}">Редактировать </a>
+           </p>
+        </div>
+      </div>
+
+
+<!-- Контент -->
+    {% if lesson %}
+    <div class="contents modules">
+      <h2>Текущий модуль: {{ module.order|add:1 }} {% if lesson %}  Текущий урок: {{ lesson.title }} Порядок: {{ lesson.order|add:1 }} {% else %} <a href="#"> Select lesson first or create here... </a>{% endif %} </h2>
+      <div class="content-list">
+        <div class="module">
+          <h3 class="sub-content">Добавить новый контент:</h3>
+           <ul class="content-types">
+            <li><a href="{% url "lesson_content_create" lesson.id "text" %}">
+            Text</a></li>
+            <li><a href="{% url "lesson_content_create" lesson.id "image" %}">
+            Image</a></li>
+            <li><a href="{% url "lesson_content_create" lesson.id "video" %}">
+            Video</a></li>
+            <li><a href="{% url "lesson_content_create" lesson.id "file" %}">
+            File</a></li>
+          </ul> 
+          {% endif %}
+        </div>
+        <h3 class="sub-content">Контент урока:</h3>
+        <ul id="lesson-contents">
+        {% for content in lesson.contents.all %}
+                <div data-id="{{ content.id }}">
+                  {% with item=content.item %}
+                  <p style="margin: 15px 0px 15px 0px; font-weight: 600;">
+                    Тип контента: ({{ item|model_name }})
+                  </p>
+                  <span class="content-type">
+                    {% if item|model_name == "video" %}
+                    <iframe width="560" height="345" src="{{ item.url }}" frameborder="0" allowfullscreen>
+                    </iframe>
+                    <p>{{ item.url }}</p>
+                    {% elif item|model_name == "text" %}
+                    <p>{{ item.body }}</p>
+                    {% elif item|model_name == "image" %}
+                    <img style="width: 300px;height: 300px;object-fit: cover;" src="https://django-margulan-static.s3.amazonaws.com/{{ item.file }}">
+                    {% elif item|model_name == "file" %}
+                    <p>{{ item.file }}</p>
+                    {% endif %}
+                    <a class="edit_button icon-pa" href="{% url "lesson_content_update" lesson.id item|model_name item.id %}">
+                      <img title="Редактировать" src="{% static 'admin/img/icon-changelink.svg' %}" alt="Изменить">
+                  </a> 
+                  </span>
+                    <form action="{% url "lesson_content_delete" content.lesson.id content.id %}" method="post">
+                      <input style="margin: 10px 0;" type="submit" value="Удалить">
+                      {% csrf_token %}
+                    </form>
+                  {% endwith %}
+                </div>
+            {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endwith %}
+  
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+  <script>
+
+    $(function() {
+      $('#modules').sortable({
+      stop: function(event, ui) {
+          modules_order = {};
+          $('#modules').children().each(function(){
+              // update the order field
+              $(this).find('.order').text($(this).index() + 1);
+              // associate the module's id with its order
+              modules_order[$(this).data('id')] = $(this).index();
+          });
+          $.ajax({
+              type: 'POST',
+              url: '{% url "module_order" %}',
+              contentType: 'application/json; charset=utf-8',
+              dataType: 'json',
+              data: JSON.stringify(modules_order)
+          });
+      }
+  });
+  
+  $('#lessons').sortable({
+      stop: function(event, ui) {
+          lessons_order = {};
+          $('#lessons').children().each(function(){
+              // associate the module's id with its order
+              $(this).find('.order').text($(this).index() + 1);
+              lessons_order[$(this).data('id')] = $(this).index();
+          });
+
+          $.ajax({
+              type: 'POST',
+              url: '{% url "lesson_order" %}',
+              contentType: 'application/json; charset=utf-8',
+              dataType: 'json',
+              data: JSON.stringify(lessons_order),
+          });
+      }
+  });
+
+  $('#lesson-contents').sortable({
+      stop: function(event, ui) {
+          contents_order = {};
+          $('#lesson-contents').children().each(function(){
+              // associate the module's id with its order
+              console.log($(this).data('id'))
+              contents_order[$(this).data('id')] = $(this).index();
+          });
+
+          $.ajax({
+              type: 'POST',
+              url: '{% url "content_order" %}',
+              contentType: 'application/json; charset=utf-8',
+              dataType: 'json',
+              data: JSON.stringify(contents_order),
+          });
+      }
+  });
+});
+  </script>
+{% endblock %}
